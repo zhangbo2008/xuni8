@@ -116,7 +116,7 @@ class Dataset(object):
             try:
                 aaa=list(glob(join(vidname, '*.wav')))[0]
                 wavpath = join(vidname, "audio.wav")
-                wav = audio.load_wav(wavpath, hparams.sample_rate)
+                wav = audio.load_wav(aaa, hparams.sample_rate)
 
                 orig_mel = audio.melspectrogram(wav).T
             except Exception as e:
