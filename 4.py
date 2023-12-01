@@ -37,7 +37,7 @@ args.checkpoint_dir='newmodel'
 args.syncnet_checkpoint_path='checkpoints/lipsync_expert.pth'
 args.checkpoint_path='checkpoints/wav2lip_gan2.pth'
 
-hparams.checkpoint_interval=3000
+hparams.checkpoint_interval=300
 
 
 
@@ -60,7 +60,7 @@ syncnet_mel_step_size = 16  # 音频片段长度
 class Dataset(object):
     def __init__(self, split):
         # self.all_videos = get_image_list(args.data_root, split)
-        self.all_videos =glob('lrs2_preprocessed/LRS2_partly/*')
+        self.all_videos =glob('my_data_preprocessed/20171116/*')
         print(self.all_videos)
     def get_frame_id(self, frame):
         return int(basename(frame).split('.')[0])
@@ -156,8 +156,9 @@ class Dataset(object):
                 continue
 
             try:
+                aaa=list(glob(join(vidname, '*.wav')))[0]
                 wavpath = join(vidname, "audio.wav")
-                wav = audio.load_wav(wavpath, hparams.sample_rate)
+                wav = audio.load_wav(aaa, hparams.sample_rate)
 
                 orig_mel = audio.melspectrogram(wav).T
             except Exception as e:
@@ -267,15 +268,16 @@ def train(device, model, train_data_loader, test_data_loader, optimizer,
                 save_checkpoint(
                     model, optimizer, global_step, checkpoint_dir, global_epoch)
             if 0:#==========禁掉eval
-             if global_step == 1 or global_step % hparams.eval_interval == 0:
-                with torch.no_grad():
-                    average_sync_loss = eval_model(test_data_loader, global_step, device, model, checkpoint_dir)
+                if global_step == 1 or global_step % hparams.eval_interval == 0:
+                    with torch.no_grad():
+                        average_sync_loss = eval_model(test_data_loader, global_step, device, model, checkpoint_dir)
 
-                    if average_sync_loss < .75:
-                        hparams.set_hparam('syncnet_wt', 0.01) # without image GAN a lesser weight is sufficient
-
-            prog_bar.set_description('L1: {}, Sync Loss: {}'.format(running_l1_loss / (step + 1),
-                                                                    running_sync_loss / (step + 1)))
+                        if average_sync_loss < .75:
+                            hparams.set_hparam('syncnet_wt', 0.01) # without image GAN a lesser weight is sufficient
+            # print(f'loss:{loss},global_step:{global_step}')
+            # prog_bar.set_description('L1: {}, Sync Loss: {}'.format(running_l1_loss / (step + 1),
+            #                                                         running_sync_loss / (step + 1)))
+            prog_bar.set_description(f'loss:{loss},global_step:{global_step}')
 
         global_epoch += 1
         

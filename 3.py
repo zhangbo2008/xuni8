@@ -38,11 +38,11 @@ print('use_cuda: {}'.format(use_cuda))
 
 syncnet_T = 5
 syncnet_mel_step_size = 16
-
+hparams.syncnet_checkpoint_interval=300
 class Dataset(object):
     def __init__(self, split):
         # self.all_videos = get_image_list(args.data_root, split)
-        self.all_videos =glob('lrs2_preprocessed/LRS2_partly/*')
+        self.all_videos =glob('my_data_preprocessed/20171116/*')
         print(self.all_videos)
     def get_frame_id(self, frame):
         return int(basename(frame).split('.')[0])
@@ -114,6 +114,7 @@ class Dataset(object):
             if not all_read: continue
 
             try:
+                aaa=list(glob(join(vidname, '*.wav')))[0]
                 wavpath = join(vidname, "audio.wav")
                 wav = audio.load_wav(wavpath, hparams.sample_rate)
 

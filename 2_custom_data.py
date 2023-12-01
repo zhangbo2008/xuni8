@@ -33,7 +33,8 @@ parser.add_argument("--data_root", help="Root folder of the LRS2 dataset", requi
 parser.add_argument("--preprocessed_root", help="Root folder of the preprocessed dataset", required=False)
 
 args = parser.parse_args()
-args.data_root='filelists'
+args.data_root_audio='/home/xyzxyz/CMLRdataset/audio/s1'
+args.data_root='/home/xyzxyz/CMLRdataset/video/s1'
 args.preprocessed_root='my_data_preprocessed' # 处理完的东西放到这个目录里面.
 
 
@@ -47,9 +48,12 @@ fa = [face_detection.FaceAlignment(face_detection.LandmarksType._2D, flip_input=
 									device='cpu') for id in range(args.ngpu)]
 template = 'ffmpeg -loglevel panic -y -i {} -strict -2 {}'
 # template2 = 'ffmpeg -hide_banner -loglevel panic -threads 1 -y -i {} -async 1 -ac 1 -vn -acodec pcm_s16le -ar 16000 {}'
-
+cnt=0
 def process_video_file(vfile, args, gpu_id):
 	video_stream = cv2.VideoCapture(vfile)
+	global cnt
+	cnt+=1
+	print(cnt)
 	
 	frames = []
 	while 1: #=====抽帧.
@@ -115,17 +119,17 @@ futures=[ mp_handler(i) for i in jobs]
 
 
 # _ = [r.result() for r in tqdm(as_completed(futures), total=len(futures))]
+if 0:
+	print('Dumping audios...')
 
-print('Dumping audios...')
-
-for vfile in tqdm(filelist):
-    try:
-        process_audio_file(vfile, args)
-    except KeyboardInterrupt:
-        exit(0)
-    except:
-        traceback.print_exc()
-        continue
+	for vfile in tqdm(filelist):
+			try:
+					process_audio_file(vfile, args)
+			except KeyboardInterrupt:
+					exit(0)
+			except:
+					traceback.print_exc()
+					continue
 
 
 
