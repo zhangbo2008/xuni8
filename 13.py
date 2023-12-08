@@ -50,8 +50,9 @@ args.checkpoint_path='wav2lip.pth'
 hparams.checkpoint_interval=300
 
 hparams.num_workers=0
-hparams.syncnet_batch_size=1000
+hparams.syncnet_batch_size=10
 hparams.syncnet_lr=3e-5
+hparams.batch_size=1
 
 
 
@@ -170,9 +171,10 @@ class Dataset(object):
                 continue
 
             try:
+                aaa=list(glob(join(vidname, '*.wav')))[0]
                 wavpath = join(vidname, "audio.wav")
-                wav = audio.load_wav(wavpath, hparams.sample_rate)
-
+#                 print(aaa,333333333)
+                wav = audio.load_wav(aaa, hparams.sample_rate) # 输入音频原始的sr不用管, 这里面设置好我们需要的sr即可.16000.
                 orig_mel = audio.melspectrogram(wav).T
             except Exception as e:
                 continue
@@ -235,6 +237,7 @@ def get_sync_loss(mel, g):
 def train(device, model, disc, train_data_loader, test_data_loader, optimizer, disc_optimizer,
           checkpoint_dir=None, checkpoint_interval=None, nepochs=None):
     global global_step, global_epoch
+    global_step=0
     resumed_step = global_step
 
     while global_epoch < nepochs:
@@ -326,6 +329,7 @@ def train(device, model, disc, train_data_loader, test_data_loader, optimizer, d
                                                                                         running_perceptual_loss / (step + 1),
                                                                                         running_disc_fake_loss / (step + 1),
                                                                                         running_disc_real_loss / (step + 1)))
+            print(global_step)
 
         global_epoch += 1
 
