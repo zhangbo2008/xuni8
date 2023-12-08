@@ -243,11 +243,11 @@ def train(device, model, disc, train_data_loader, test_data_loader, optimizer, d
         running_disc_real_loss, running_disc_fake_loss = 0., 0.
         prog_bar = tqdm(enumerate(train_data_loader))
         for step, (x, indiv_mels, mel, gt) in prog_bar:
-          if global_step==train_steps:
-            save_checkpoint(
-                    model, optimizer, global_step, checkpoint_dir, global_epoch)
-            print('训完')
-            return
+            if global_step==train_steps:
+              save_checkpoint(
+                      model, optimizer, global_step, checkpoint_dir, global_epoch)
+              print('训完')
+              return
             disc.train()
             model.train()
 
