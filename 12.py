@@ -49,7 +49,7 @@ syncnet_T = 5
 syncnet_mel_step_size = 16
 hparams.syncnet_checkpoint_interval=300
 hparams.num_workers=0
-hparams.syncnet_batch_size=1000
+hparams.syncnet_batch_size=10
 hparams.syncnet_lr=3e-5
 class Dataset(object):
     def __init__(self, split):

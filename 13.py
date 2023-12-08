@@ -245,7 +245,7 @@ def train(device, model, disc, train_data_loader, test_data_loader, optimizer, d
         running_sync_loss, running_l1_loss, disc_loss, running_perceptual_loss = 0., 0., 0., 0.
         running_disc_real_loss, running_disc_fake_loss = 0., 0.
         prog_bar = tqdm(enumerate(train_data_loader))
-        for step, (x, indiv_mels, mel, gt) in prog_bar:
+        for step, (x, indiv_mels, mel, gt) in enumerate(train_data_loader):
             if global_step==train_steps:
               save_checkpoint(
                       model, optimizer, global_step, checkpoint_dir, global_epoch)
@@ -323,8 +323,8 @@ def train(device, model, disc, train_data_loader, test_data_loader, optimizer, d
 
 
            
-
-            prog_bar.set_description('L1: {}, Sync: {}, Percep: {} | Fake: {}, Real: {}'.format(running_l1_loss / (step + 1),
+            if global_step%10==0:
+              print('重构: {}, 同步: {}, 区分器: {} | 区分假的loss: {}, 区分真的loss: {}'.format(running_l1_loss / (step + 1),
                                                                                         running_sync_loss / (step + 1),
                                                                                         running_perceptual_loss / (step + 1),
                                                                                         running_disc_fake_loss / (step + 1),
@@ -333,63 +333,63 @@ def train(device, model, disc, train_data_loader, test_data_loader, optimizer, d
 
         global_epoch += 1
 
-def eval_model(test_data_loader, global_step, device, model, disc):
-    eval_steps = 300
-    print('Evaluating for {} steps'.format(eval_steps))
-    running_sync_loss, running_l1_loss, running_disc_real_loss, running_disc_fake_loss, running_perceptual_loss = [], [], [], [], []
-    while 1:
-        for step, (x, indiv_mels, mel, gt) in enumerate((test_data_loader)):
-            model.eval()
-            disc.eval()
+# def eval_model(test_data_loader, global_step, device, model, disc):
+#     eval_steps = 300
+#     print('Evaluating for {} steps'.format(eval_steps))
+#     running_sync_loss, running_l1_loss, running_disc_real_loss, running_disc_fake_loss, running_perceptual_loss = [], [], [], [], []
+#     while 1:
+#         for step, (x, indiv_mels, mel, gt) in enumerate((test_data_loader)):
+#             model.eval()
+#             disc.eval()
 
-            x = x.to(device)
-            mel = mel.to(device)
-            indiv_mels = indiv_mels.to(device)
-            gt = gt.to(device)
+#             x = x.to(device)
+#             mel = mel.to(device)
+#             indiv_mels = indiv_mels.to(device)
+#             gt = gt.to(device)
 
-            pred = disc(gt)
-            disc_real_loss = F.binary_cross_entropy(pred, torch.ones((len(pred), 1)).to(device))
+#             pred = disc(gt)
+#             disc_real_loss = F.binary_cross_entropy(pred, torch.ones((len(pred), 1)).to(device))
 
-            g = model(indiv_mels, x)
-            pred = disc(g)
-            disc_fake_loss = F.binary_cross_entropy(pred, torch.zeros((len(pred), 1)).to(device))
+#             g = model(indiv_mels, x)
+#             pred = disc(g)
+#             disc_fake_loss = F.binary_cross_entropy(pred, torch.zeros((len(pred), 1)).to(device))
 
-            running_disc_real_loss.append(disc_real_loss.item())
-            running_disc_fake_loss.append(disc_fake_loss.item())
+#             running_disc_real_loss.append(disc_real_loss.item())
+#             running_disc_fake_loss.append(disc_fake_loss.item())
 
-            sync_loss = get_sync_loss(mel, g)
+#             sync_loss = get_sync_loss(mel, g)
             
-            if hparams.disc_wt > 0.:
-                perceptual_loss = disc.perceptual_forward(g)
-            else:
-                perceptual_loss = 0.
+#             if hparams.disc_wt > 0.:
+#                 perceptual_loss = disc.perceptual_forward(g)
+#             else:
+#                 perceptual_loss = 0.
 
-            l1loss = recon_loss(g, gt)
+#             l1loss = recon_loss(g, gt)
 
-            loss = hparams.syncnet_wt * sync_loss + hparams.disc_wt * perceptual_loss + \
-                                    (1. - hparams.syncnet_wt - hparams.disc_wt) * l1loss
+#             loss = hparams.syncnet_wt * sync_loss + hparams.disc_wt * perceptual_loss + \
+#                                     (1. - hparams.syncnet_wt - hparams.disc_wt) * l1loss
 
-            running_l1_loss.append(l1loss.item())
-            running_sync_loss.append(sync_loss.item())
+#             running_l1_loss.append(l1loss.item())
+#             running_sync_loss.append(sync_loss.item())
             
-            if hparams.disc_wt > 0.:
-                running_perceptual_loss.append(perceptual_loss.item())
-            else:
-                running_perceptual_loss.append(0.)
+#             if hparams.disc_wt > 0.:
+#                 running_perceptual_loss.append(perceptual_loss.item())
+#             else:
+#                 running_perceptual_loss.append(0.)
 
-            if step > eval_steps: break
+#             if step > eval_steps: break
 
-        print('L1: {}, Sync: {}, Percep: {} | Fake: {}, Real: {}'.format(sum(running_l1_loss) / len(running_l1_loss),
-                                                            sum(running_sync_loss) / len(running_sync_loss),
-                                                            sum(running_perceptual_loss) / len(running_perceptual_loss),
-                                                            sum(running_disc_fake_loss) / len(running_disc_fake_loss),
-                                                             sum(running_disc_real_loss) / len(running_disc_real_loss)))
-        return sum(running_sync_loss) / len(running_sync_loss)
+#         print('重构loss: {}, 同步loss: {}, Percep: {} | Fake: {}, Real: {}'.format(sum(running_l1_loss) / len(running_l1_loss),
+#                                                             sum(running_sync_loss) / len(running_sync_loss),
+#                                                             sum(running_perceptual_loss) / len(running_perceptual_loss),
+#                                                             sum(running_disc_fake_loss) / len(running_disc_fake_loss),
+#                                                              sum(running_disc_real_loss) / len(running_disc_real_loss)))
+#         return sum(running_sync_loss) / len(running_sync_loss)
 
 
 def save_checkpoint(model, optimizer, step, checkpoint_dir, epoch, prefix=''):
     checkpoint_path = join(
-        checkpoint_dir, "{}checkpoint_step{:09d}.pth".format(prefix, global_step))
+        checkpoint_dir, "checkpoint.pth".format(prefix, global_step))
     optimizer_state = optimizer.state_dict() if hparams.save_optimizer_state else None
     torch.save({
         "state_dict": model.state_dict(),
